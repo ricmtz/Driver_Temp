@@ -1,9 +1,11 @@
 import threading
 import serial
+import datetime
 from time import sleep
 from queue import Queue
 
 commands = Queue()
+finish = Queue()
 turns = Queue()
 
 VALID_INSTRUC = ("start", "stop", "setTime", "getTime",
@@ -52,7 +54,7 @@ def run_driver():
         instruc = ""
         if not commands.empty():
             instruc = commands.get()
-        if instruc == "star":
+        if instruc == "start":
             star()
         if instruc == "stop":
             stop()
@@ -68,10 +70,15 @@ def run_driver():
             break
 
 def star():
-    pass
+    arduino.write(b'start')
+    finish.put("read")
+    rs = threading.Thread(target=read_serial)
+    rs.start()
+    turns.get()
 
 def stop():
     arduino.write(b'stop')
+    finish.get()
     turns.get()
 
 def set_time():
@@ -102,7 +109,21 @@ def get_mode():
     r_ardu = arduino.readline()
     print(r_ardu.decode())
     turns.get()
-    
+
+def write_file(info=""):    
+    now = datetime.datetime.now()
+    name = "{}-{}-{}.txt".format(now.year, now.month, now.day)
+    f = open(name, 'a')
+    f.write(info)
+    f.write('\n')
+    f.close()
+
+def read_serial():
+    while not finish.empty():
+        r_ardu = arduino.readline()
+        write_file(r_ardu.decode())
+
+
 if __name__ == '__main__':    
     w = threading.Thread(target=write_command)
     r = threading.Thread(target=run_driver)
