@@ -13,14 +13,14 @@ VALID_INSTRUC = ("start", "stop", "setTime", "getTime",
 
 VALID_MODES = ("readAll", "onlyTemp", "onlyHum")
 
-instruc_descrip = { "start": "Por implementar...", 
-                    "stop": "Por implementar...", 
-                    "setTime": "Por implementar...", 
-                    "getTime": "Por implementar...",
-                    "setMode": "Por implementar...", 
-                    "getMode": "Por implementar...",
-                    "exit": "Por implementar...", 
-                    "help": "Por implementar..." }
+DESC_INSTRUC = { "start": "Begins the capture of data sent by the Arduino.", 
+                "stop": "Stop the capture of data from Arduino.", 
+                "setTime": "Modify the Delay between one capture an the next one.", 
+                "getTime": "Show the Delay time.",
+                "setMode": "Modify the capture mode, between: readAll, onlyTemp and onlyHum.", 
+                "getMode": "Por implementar...",
+                "exit": "Por implementar...", 
+                "help": "Por implementar..."  }
 
 arduino = None
 try:
@@ -45,8 +45,8 @@ def write_command():
                 break
 
 def show_help(instr=""):
-    for i in instruc_descrip.keys():
-        print("{}: {}".format(i, instruc_descrip[i]))
+    for i in DESC_INSTRUC.keys():
+        print("{}: {}".format(i, DESC_INSTRUC[i]))
 
 def run_driver():
     """ This function implement the operation of the driver """
@@ -66,7 +66,7 @@ def run_driver():
             set_mode()
         if instruc == "getMode":
             get_mode()
-        if instruc == "exit":                        
+        if instruc == "exit":
             break
 
 def star():
@@ -114,8 +114,9 @@ def write_file(info=""):
     now = datetime.datetime.now()
     name = "{}-{}-{}.txt".format(now.year, now.month, now.day)
     f = open(name, 'a')
-    f.write(info)
-    f.write('\n')
+    if info != "":
+        f.write(info)
+        f.write('\n')
     f.close()
 
 def read_serial():
