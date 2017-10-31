@@ -63,12 +63,12 @@ def run_driver():
             get_mode()
         if instruc == "exit":
             arduino.write(b'stop')
-            if not finish.empty():                
+            while not finish.empty():                
                 finish.get()
-            if not commands.empty():
+            while not commands.empty():
                 commands.get()                
-            if not turns.empty():                
-                turns.get()            
+            while not turns.empty():                
+                turns.get()
             break
 
 def star():
