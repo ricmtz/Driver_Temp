@@ -39,7 +39,7 @@ def write_command():
             if instruc == "exit":
                 break
 
-def show_help(instr=""):
+def show_help():
     for i in DESC_INSTRUC.keys():
         print("{}: {}".format(i, DESC_INSTRUC[i]))
 
@@ -63,6 +63,7 @@ def run_driver():
             get_mode()
         if instruc == "exit":
             arduino.write(b'stop')
+            arduino.flush()
             while not finish.empty():                
                 finish.get()
             while not commands.empty():
@@ -73,6 +74,7 @@ def run_driver():
 
 def star():
     arduino.write(b'start')
+    arduino.flush()
     finish.put("read")
     rs = threading.Thread(target=read_serial)
     rs.start()
@@ -80,25 +82,29 @@ def star():
 
 def stop():
     arduino.write(b'stop')
-    if not turns.empty():                
-        turns.get()
+    arduino.flush()
     if not finish.empty():                
-        finish.get()
+        finish.get()                    
+    turns.get()    
 
 def set_time():
     arduino.write(b'setTime')
+    arduino.flush()
     n_time = input("\tNew delay(ms): ")
     arduino.write(n_time.encode())
     turns.get()
 
 def get_time():
     arduino.write(b'getTime')
+    arduino.flush()
     r_ardu = arduino.readline()
+    arduino.flush()
     print(r_ardu.decode())
     turns.get()
 
 def set_mode():
     arduino.write(b'setMode')
+    arduino.flush()
     while True:
         n_mode = input("Write the new mode: ")
         if  n_mode in VALID_MODES:
@@ -110,7 +116,9 @@ def set_mode():
 
 def get_mode():
     arduino.write(b'getMode')
+    arduino.flush()
     r_ardu = arduino.readline()
+    arduino.flush()
     print(r_ardu.decode())
     turns.get()
 
@@ -125,6 +133,7 @@ def write_file(info=""):
 def read_serial():
     while not finish.empty():
         r_ardu = arduino.readline()
+        arduino.flush()
         write_file(r_ardu.decode())
 
 
@@ -135,6 +144,9 @@ if __name__ == '__main__':
         w = threading.Thread(target=write_command)
         r = threading.Thread(target=run_driver)
         r.start()
-        w.start()        
+        w.start()
+        r.join()
+        w.join()
+        arduino.close()        
     except:
         print("No se detecto el dispositivo")
