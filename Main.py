@@ -13,23 +13,18 @@ VALID_INSTRUC = ("start", "stop", "setTime", "getTime",
 
 VALID_MODES = ("readAll", "onlyTemp", "onlyHum")
 
-instruc_descrip = { "start": "Por implementar...", 
-                    "stop": "Por implementar...", 
-                    "setTime": "Por implementar...", 
-                    "getTime": "Por implementar...",
-                    "setMode": "Por implementar...", 
-                    "getMode": "Por implementar...",
-                    "exit": "Por implementar...", 
-                    "help": "Por implementar..." }
+DESC_INSTRUC = { "start": "Begins the capture of data sent by the Arduino.", 
+                "stop": "Stop the capture of data from Arduino.", 
+                "setTime": "Modify the Delay between one capture an the next one.", 
+                "getTime": "Show the Delay time.",
+                "setMode": "Modify the capture mode, between: readAll, onlyTemp and onlyHum.", 
+                "getMode": "Show the capture mode",
+                "exit": "Close the aplicacion"}
 
 arduino = None
-try:
-    arduino = serial.Serial("COM4", 9600)
-    sleep(2)
-except:
-    print("No se detecto el dispositivo")
 
 def write_command():
+    """ This functions recive all the commands written by the user """
     while True:
         if turns.empty():         
             instruc = input(">")
@@ -45,8 +40,8 @@ def write_command():
                 break
 
 def show_help(instr=""):
-    for i in instruc_descrip.keys():
-        print("{}: {}".format(i, instruc_descrip[i]))
+    for i in DESC_INSTRUC.keys():
+        print("{}: {}".format(i, DESC_INSTRUC[i]))
 
 def run_driver():
     """ This function implement the operation of the driver """
@@ -66,7 +61,14 @@ def run_driver():
             set_mode()
         if instruc == "getMode":
             get_mode()
-        if instruc == "exit":                        
+        if instruc == "exit":
+            arduino.write(b'stop')
+            if not finish.empty():                
+                finish.get()
+            if not commands.empty():
+                commands.get()                
+            if not turns.empty():                
+                turns.get()            
             break
 
 def star():
@@ -78,8 +80,10 @@ def star():
 
 def stop():
     arduino.write(b'stop')
-    finish.get()
-    turns.get()
+    if not turns.empty():                
+        turns.get()
+    if not finish.empty():                
+        finish.get()
 
 def set_time():
     arduino.write(b'setTime')
@@ -114,8 +118,8 @@ def write_file(info=""):
     now = datetime.datetime.now()
     name = "{}-{}-{}.txt".format(now.year, now.month, now.day)
     f = open(name, 'a')
-    f.write(info)
-    f.write('\n')
+    if "Tmp" in info or "Hum" in info:
+        f.write(info)
     f.close()
 
 def read_serial():
@@ -124,9 +128,13 @@ def read_serial():
         write_file(r_ardu.decode())
 
 
-if __name__ == '__main__':    
-    w = threading.Thread(target=write_command)
-    r = threading.Thread(target=run_driver)
-
-    r.start()
-    w.start()    
+if __name__ == '__main__':
+    try:
+        arduino = serial.Serial("COM4", 9600)
+        sleep(2)
+        w = threading.Thread(target=write_command)
+        r = threading.Thread(target=run_driver)
+        r.start()
+        w.start()        
+    except:
+        print("No se detecto el dispositivo")
