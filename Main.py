@@ -68,7 +68,7 @@ def run_driver():
             if not commands.empty():
                 commands.get()                
             if not turns.empty():                
-                turns.get()            
+                turns.get()
             break
 
 def star():
