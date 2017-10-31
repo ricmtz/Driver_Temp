@@ -18,18 +18,13 @@ DESC_INSTRUC = { "start": "Begins the capture of data sent by the Arduino.",
                 "setTime": "Modify the Delay between one capture an the next one.", 
                 "getTime": "Show the Delay time.",
                 "setMode": "Modify the capture mode, between: readAll, onlyTemp and onlyHum.", 
-                "getMode": "Por implementar...",
-                "exit": "Por implementar...", 
-                "help": "Por implementar..."  }
+                "getMode": "Show the capture mode",
+                "exit": "Close the aplicacion"}
 
 arduino = None
-try:
-    arduino = serial.Serial("COM4", 9600)
-    sleep(2)
-except:
-    print("No se detecto el dispositivo")
 
 def write_command():
+    """ This functions recive all the commands written by the user """
     while True:
         if turns.empty():         
             instruc = input(">")
@@ -67,6 +62,13 @@ def run_driver():
         if instruc == "getMode":
             get_mode()
         if instruc == "exit":
+            arduino.write(b'stop')
+            if not finish.empty():                
+                finish.get()
+            if not commands.empty():
+                commands.get()                
+            if not turns.empty():                
+                turns.get()            
             break
 
 def star():
@@ -78,8 +80,10 @@ def star():
 
 def stop():
     arduino.write(b'stop')
-    finish.get()
-    turns.get()
+    if not turns.empty():                
+        turns.get()
+    if not finish.empty():                
+        finish.get()
 
 def set_time():
     arduino.write(b'setTime')
@@ -114,9 +118,8 @@ def write_file(info=""):
     now = datetime.datetime.now()
     name = "{}-{}-{}.txt".format(now.year, now.month, now.day)
     f = open(name, 'a')
-    if info != "":
+    if "Tmp" in info or "Hum" in info:
         f.write(info)
-        f.write('\n')
     f.close()
 
 def read_serial():
@@ -125,9 +128,13 @@ def read_serial():
         write_file(r_ardu.decode())
 
 
-if __name__ == '__main__':    
-    w = threading.Thread(target=write_command)
-    r = threading.Thread(target=run_driver)
-
-    r.start()
-    w.start()    
+if __name__ == '__main__':
+    try:
+        arduino = serial.Serial("COM4", 9600)
+        sleep(2)
+        w = threading.Thread(target=write_command)
+        r = threading.Thread(target=run_driver)
+        r.start()
+        w.start()        
+    except:
+        print("No se detecto el dispositivo")
